@@ -5,7 +5,7 @@ import os
 import shutil
 import threading
 
-from flask import Blueprint, jsonify, redirect, render_template, request, send_file, send_from_directory
+from flask import Blueprint, current_app, jsonify, redirect, render_template, request, send_file, send_from_directory
 
 pluginDir = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(pluginDir, 'plugin.json'), encoding='utf-8-sig') as f:
@@ -233,6 +233,18 @@ def officeSave():
         'mtime': os.path.getmtime(path),
         'backup': path + '.rc-office.bak',
     })
+
+
+@office_bp.route('/sw.js')
+def officeServiceWorker():
+    script = (
+        "self.addEventListener('install',function(){self.skipWaiting();});"
+        "self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());});"
+    )
+    response = current_app.response_class(script, mimetype='application/javascript')
+    response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
 
 
 @office_bp.route(f'/{pluginID}/health')

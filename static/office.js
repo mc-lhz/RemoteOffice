@@ -40,6 +40,28 @@
     }
   }
 
+  function showHint(text, ms) {
+    statusText.textContent = text;
+    statusText.style.color = '';
+    statusBox.hidden = false;
+    window.clearTimeout(statusTimer);
+    statusTimer = window.setTimeout(function () {
+      statusBox.hidden = true;
+    }, ms || 8000);
+  }
+
+  function maybeShowInsecureHint() {
+    if (window.isSecureContext) {
+      return;
+    }
+    var text = config.lang === 'zh-CN'
+      ? '非安全源访问：Service Worker 与隔离特性不可用，编辑功能不受影响；如需完整能力请用 localhost 访问'
+      : 'Insecure origin: Service Worker and isolation features unavailable; editing still works. Use localhost for full capability';
+    window.setTimeout(function () {
+      showHint(text, 8000);
+    }, 1200);
+  }
+
   function updateDirty(value) {
     dirty = !!value;
     dirtyBadge.hidden = !dirty;
@@ -239,6 +261,7 @@
         downloadButton.disabled = !config.filePath;
       }
       setStatus('文档已打开');
+      maybeShowInsecureHint();
       startSaveShortcutWatcher();
       startStatePolling();
       return;

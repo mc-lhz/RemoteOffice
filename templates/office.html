@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="{{ config.lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>在线 Office 编辑器</title>
+  <link rel="stylesheet" href="{{ url_for('office_bp.static', filename='office.css') }}">
+</head>
+<body>
+  <header class="officeBar">
+    <div class="officeTitle">
+      <span class="officeMark">OFFICE</span>
+      <span id="fileName">{{ config.fileName or '在线 Office 编辑器' }}</span>
+    </div>
+    <div class="officeActions">
+      <span id="dirtyBadge" class="dirtyBadge" hidden>未保存</span>
+      <button id="saveButton" type="button" disabled>保存</button>
+      <button id="reloadButton" type="button" class="secondary">重新加载</button>
+    </div>
+  </header>
+
+  <main class="officeMain">
+    <section id="emptyState" class="emptyState" {% if config.filePath %}hidden{% endif %}>
+      <h1>打开本地文档</h1>
+      <p>输入文件完整路径，或在文件列表中点击“在线编辑”。</p>
+      <div class="pathRow">
+        <input id="pathInput" type="text" placeholder="D:\资料\test.docx" spellcheck="false">
+        <button id="openPathButton" type="button">打开</button>
+      </div>
+      <p id="emptyError" class="errorText">{{ config.error or '' }}</p>
+      {% if not config.distReady %}
+      <p class="errorText">未找到 Office 静态资源，请先部署 office-dist。</p>
+      {% endif %}
+    </section>
+
+    <iframe
+      id="editorFrame"
+      title="Office editor"
+      {% if not config.filePath %}hidden{% endif %}
+      allow="clipboard-read; clipboard-write"
+    ></iframe>
+  </main>
+
+  <footer class="officeStatus">
+    <span id="statusText">准备就绪</span>
+  </footer>
+
+  <script>
+    window.OFFICE_CONFIG = {{ config | tojson }};
+  </script>
+  <script src="{{ url_for('office_bp.static', filename='office.js') }}"></script>
+</body>
+</html>

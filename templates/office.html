@@ -28,6 +28,13 @@
         <button id="openPathButton" type="button">打开</button>
       </div>
       <p id="emptyError" class="errorText">{{ config.error or '' }}</p>
+      <div id="recentFiles" class="recentFiles" hidden>
+        <div class="recentHead">
+          <h2>最近打开</h2>
+          <button id="recentClear" type="button" class="textButton">清除记录</button>
+        </div>
+        <ul id="recentList" class="recentList"></ul>
+      </div>
       {% if not config.distReady %}
       <p class="errorText">未找到 Office 静态资源，请先部署 office-dist。</p>
       {% endif %}

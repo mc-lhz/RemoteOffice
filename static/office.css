@@ -140,6 +140,83 @@ button:disabled {
   color: #d1242f !important;
 }
 
+.recentFiles {
+  margin-top: 18px;
+}
+
+.recentHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recentHead h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #646a73;
+}
+
+.textButton {
+  min-width: 0;
+  height: auto;
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  color: #1f6feb;
+  font-size: 12px;
+}
+
+.textButton:hover:not(:disabled) {
+  background: none;
+  color: #1a5fcc;
+  text-decoration: underline;
+}
+
+.recentList {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.recentList li + li {
+  margin-top: 4px;
+}
+
+.recentItem {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 6px 10px;
+  border: 1px solid #dfe2e8;
+  border-radius: 6px;
+  background: #fff;
+  color: #1f2329;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recentItem:hover:not(:disabled) {
+  background: #f0f6ff;
+  border-color: #9ec1ff;
+  color: #1f2329;
+}
+
+.recentName {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.recentMeta {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #8a919c;
+  word-break: break-all;
+}
+
 .officeStatus {
   position: fixed;
   left: 14px;

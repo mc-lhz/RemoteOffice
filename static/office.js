@@ -20,6 +20,10 @@
   var dirty = false;
   var saving = false;
   var shortcutTimer = 0;
+  var RECENT_KEY = 'rc-office-recent';
+  var recentBox = document.getElementById('recentFiles');
+  var recentList = document.getElementById('recentList');
+  var recentClear = document.getElementById('recentClear');
 
   function setStatus(text, isError) {
     statusText.textContent = text;
@@ -37,6 +41,70 @@
     dirty = !!value;
     dirtyBadge.hidden = !dirty;
     saveButton.disabled = !dirty || !fileOpened || saving;
+  }
+
+  function loadRecent() {
+    try {
+      var raw = window.localStorage.getItem(RECENT_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveRecentList(list) {
+    try {
+      window.localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  function rememberRecent(path, name) {
+    if (!path) {
+      return;
+    }
+    var list = loadRecent().filter(function (item) {
+      return item && item.path !== path;
+    });
+    list.unshift({ path: path, name: name || path, time: Date.now() });
+    saveRecentList(list.slice(0, 8));
+  }
+
+  function officeUrl(path) {
+    return '/office?path=' + encodeURIComponent(path) +
+      '&lang=' + encodeURIComponent(config.lang) +
+      '&theme=' + encodeURIComponent(config.theme || 'dark');
+  }
+
+  function renderRecent() {
+    if (!recentBox || !recentList) {
+      return;
+    }
+    var list = loadRecent();
+    recentList.textContent = '';
+    list.forEach(function (item) {
+      if (!item || !item.path) {
+        return;
+      }
+      var li = document.createElement('li');
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'recentItem';
+      var name = document.createElement('span');
+      name.className = 'recentName';
+      name.textContent = item.name || item.path;
+      var meta = document.createElement('span');
+      meta.className = 'recentMeta';
+      meta.textContent = (item.time ? new Date(item.time).toLocaleString() : '') + ' · ' + item.path;
+      button.appendChild(name);
+      button.appendChild(meta);
+      button.addEventListener('click', function () {
+        window.location.href = officeUrl(item.path);
+      });
+      li.appendChild(button);
+      recentList.appendChild(li);
+    });
+    recentBox.hidden = list.length === 0;
   }
 
   function saveShortcutHandler(event) {
@@ -145,6 +213,7 @@
     if (type === 'document:opened') {
       fileOpened = true;
       updateDirty(false);
+      rememberRecent(config.filePath, config.fileName);
       setStatus('文档已打开');
       startSaveShortcutWatcher();
       return;
@@ -228,9 +297,7 @@
       emptyError.textContent = '请输入文件完整路径';
       return;
     }
-    window.location.href = '/office?path=' + encodeURIComponent(value) +
-      '&lang=' + encodeURIComponent(config.lang) +
-      '&theme=' + encodeURIComponent(config.theme || 'dark');
+    window.location.href = officeUrl(value);
   }
 
   saveButton.addEventListener('click', saveDocument);
@@ -243,12 +310,19 @@
       openTypedPath();
     }
   });
+  if (recentClear) {
+    recentClear.addEventListener('click', function () {
+      saveRecentList([]);
+      renderRecent();
+    });
+  }
   window.addEventListener('message', handleMessage);
   window.addEventListener('keydown', saveShortcutHandler, true);
 
   if (!config.filePath) {
     emptyState.hidden = false;
     frame.hidden = true;
+    renderRecent();
     return;
   }
 

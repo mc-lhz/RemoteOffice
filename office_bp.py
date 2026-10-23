@@ -262,11 +262,28 @@ def officeServiceWorker():
     return response
 
 
+def probeX2tVariant(distDir):
+    rel = 'sdkjs/common/wasm/x2t/x2t.wasm'
+    for variant, relPath in (('gzip', rel + '.gz'), ('plain', rel), ('brotli', rel + '.br')):
+        full = os.path.join(distDir, *relPath.split('/'))
+        if os.path.isfile(full):
+            return {'variant': variant, 'file': relPath, 'size': os.path.getsize(full)}
+    return None
+
+
 @office_bp.route(f'/{pluginID}/health')
 def officeHealth():
     distDir = resolveDistDir()
-    return jsonify({
+    payload = {
         'plugin': pluginID,
         'dist': distDir,
         'ready': bool(distDir),
-    })
+    }
+    if distDir:
+        payload['x2t'] = probeX2tVariant(distDir)
+        dictDir = os.path.join(distDir, 'dictionaries')
+        payload['dictionaries'] = {
+            'present': os.path.isdir(dictDir),
+            'locales': len(os.listdir(dictDir)) if os.path.isdir(dictDir) else 0,
+        }
+    return jsonify(payload)

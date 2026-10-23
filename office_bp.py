@@ -144,14 +144,29 @@ def serveDistFile(filename):
     distDir = resolveDistDir()
     if not distDir:
         return 'Office assets not found', 503
-    response = send_from_directory(distDir, filename, conditional=True)
+    serveName = filename
+    encoding = None
+    baseName = None
     if filename.lower().endswith('.br'):
+        baseName = filename[:-3]
+        gzName = baseName + '.gz'
+        if os.path.isfile(os.path.join(distDir, gzName)):
+            serveName = gzName
+            encoding = 'gzip'
+        elif os.path.isfile(os.path.join(distDir, baseName)):
+            serveName = baseName
+    response = send_from_directory(distDir, serveName, conditional=True)
+    if serveName.lower().endswith('.br'):
         try:
-            with open(os.path.join(distDir, filename), 'rb') as f:
+            with open(os.path.join(distDir, serveName), 'rb') as f:
                 magic = f.read(2)
             response.headers['Content-Encoding'] = 'gzip' if magic == b'\x1f\x8b' else 'br'
         except OSError:
             pass
+    elif encoding:
+        response.headers['Content-Encoding'] = encoding
+    if baseName and baseName.lower().endswith('.wasm'):
+        response.headers['Content-Type'] = 'application/wasm'
     response.headers['Cache-Control'] = 'public, max-age=3600'
     return response
 

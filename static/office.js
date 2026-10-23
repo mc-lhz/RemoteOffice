@@ -20,6 +20,8 @@
   var dirty = false;
   var saving = false;
   var shortcutTimer = 0;
+  var statePollTimer = 0;
+  var isPdf = /\.pdf$/i.test(String(config.filePath || ''));
   var RECENT_KEY = 'rc-office-recent';
   var recentBox = document.getElementById('recentFiles');
   var recentList = document.getElementById('recentList');
@@ -40,7 +42,25 @@
   function updateDirty(value) {
     dirty = !!value;
     dirtyBadge.hidden = !dirty;
-    saveButton.disabled = !dirty || !fileOpened || saving;
+    saveButton.disabled = !fileOpened || saving || (!dirty && !isPdf);
+  }
+
+  function requestState() {
+    if (!fileOpened || !frame.contentWindow) {
+      return;
+    }
+    post('document:get-state').then(function (payload) {
+      if (payload && typeof payload.dirty === 'boolean' && payload.dirty !== dirty) {
+        updateDirty(payload.dirty);
+      }
+    }).catch(function () {});
+  }
+
+  function startStatePolling() {
+    if (statePollTimer || !fileOpened) {
+      return;
+    }
+    statePollTimer = window.setInterval(requestState, 2000);
   }
 
   function loadRecent() {
@@ -122,7 +142,7 @@
     if (!fileOpened) {
       return;
     }
-    if (!dirty) {
+    if (!dirty && !isPdf) {
       setStatus('没有未保存的更改');
       return;
     }
@@ -216,6 +236,7 @@
       rememberRecent(config.filePath, config.fileName);
       setStatus('文档已打开');
       startSaveShortcutWatcher();
+      startStatePolling();
       return;
     }
     if (id && pending.has(id)) {
@@ -284,7 +305,7 @@
       updateDirty(!!result.dirty);
       setStatus('已保存，备份文件: ' + (body.backup || ''));
     } catch (error) {
-      saveButton.disabled = !dirty;
+      saveButton.disabled = !dirty && !isPdf;
       setStatus('保存失败: ' + error.message, true);
     } finally {
       saving = false;

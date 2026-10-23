@@ -250,6 +250,20 @@ def officeSave():
     })
 
 
+@office_bp.route(f'/{pluginID}/api/download')
+def officeDownload():
+    path = request.args.get('path', '').strip()
+    if not path:
+        return jsonify({'error': 'missing path'}), 400
+    path = os.path.abspath(path)
+    if not isAllowedFile(path):
+        return jsonify({'error': 'file not found or unsupported'}), 404
+    mimeType = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+    response = send_file(path, mimetype=mimeType, as_attachment=True, conditional=True)
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
+
 @office_bp.route('/sw.js')
 def officeServiceWorker():
     script = (

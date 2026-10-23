@@ -4,6 +4,7 @@
   var config = window.OFFICE_CONFIG || {};
   var frame = document.getElementById('editorFrame');
   var saveButton = document.getElementById('saveButton');
+  var downloadButton = document.getElementById('downloadButton');
   var reloadButton = document.getElementById('reloadButton');
   var dirtyBadge = document.getElementById('dirtyBadge');
   var statusBox = document.querySelector('.officeStatus');
@@ -234,6 +235,9 @@
       fileOpened = true;
       updateDirty(false);
       rememberRecent(config.filePath, config.fileName);
+      if (downloadButton) {
+        downloadButton.disabled = !config.filePath;
+      }
       setStatus('文档已打开');
       startSaveShortcutWatcher();
       startStatePolling();
@@ -322,6 +326,14 @@
   }
 
   saveButton.addEventListener('click', saveDocument);
+  if (downloadButton) {
+    downloadButton.addEventListener('click', function () {
+      if (!config.filePath) {
+        return;
+      }
+      window.location.href = '/office/api/download?path=' + encodeURIComponent(config.filePath);
+    });
+  }
   reloadButton.addEventListener('click', function () {
     window.location.reload();
   });

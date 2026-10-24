@@ -40,6 +40,20 @@ node tools/prepare_office_assets.js --dist "C:\ProgramData\RemoteConnecter\offic
 服务端按下述顺序响应 `*.br` 请求：同名 `.gz`（gzip）→ 去后缀原文件（无压缩）→ 原始 `.br`。
 `GET /office/health` 的 `x2t.variant` 字段显示当前实际生效的变体（gzip / plain / brotli）。
 
+### x2t 在线优先下载（可选）
+
+对 dist 打补丁后，编辑器的 x2t WASM 会**优先从上游 Cloudflare Pages 镜像下载**（仅此一个在线源，
+约 6.9MB brotli，`Access-Control-Allow-Origin: *`，从纯 HTTP 页面跨源拉取也合法），
+失败自动回退本地相对路径（走上面的编码协商链）。公网/低上行带宽部署可省下约 10MB 的服务器出口流量，
+机房断网不受影响：
+
+```bash
+node tools/patch_x2t_online.js --dist "C:\ProgramData\RemoteConnecter\office\dist"   # 幂等，可重复执行
+```
+
+在线源地址硬编码于补丁内（`https://edit.chaxus.com/sdkjs/common/wasm/x2t/x2t.wasm.br`）；
+不需要在线加速时，不执行本补丁即保持纯本地行为。
+
 ## 路由一览
 
 | 路由 | 说明 |

@@ -24,12 +24,20 @@
   <main class="officeMain">
     <section id="emptyState" class="emptyState" {% if config.filePath %}hidden{% endif %}>
       <h1>打开本地文档</h1>
-      <p>输入文件完整路径，或在文件列表中点击“在线编辑”。</p>
       <div class="pathRow">
-        <input id="pathInput" type="text" placeholder="D:\资料\test.docx" spellcheck="false">
+        <input id="pathInput" type="text" placeholder="输入文件夹路径浏览，或文件路径直接打开" spellcheck="false">
         <button id="openPathButton" type="button">打开</button>
       </div>
       <p id="emptyError" class="errorText">{{ config.error or '' }}</p>
+      <div id="fileManager" class="fileManager">
+        <div class="fmToolbar">
+          <button id="fmUp" type="button" class="textButton" title="返回上级">↑ 上级</button>
+          <span id="fmPath" class="fmPath" title="">此电脑</span>
+          <button id="fmRefresh" type="button" class="textButton" title="刷新当前目录">刷新</button>
+        </div>
+        <div id="fmList" class="fmList" role="list"></div>
+        <div id="fmFoot" class="fmFoot" hidden></div>
+      </div>
       <div id="recentFiles" class="recentFiles" hidden>
         <div class="recentHead">
           <h2>最近打开</h2>

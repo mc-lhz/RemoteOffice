@@ -235,3 +235,123 @@ button:disabled {
 [hidden] {
   display: none !important;
 }
+
+/* ---------------- 文件管理器 ---------------- */
+
+.fileManager {
+  width: 100%;
+  max-width: 720px;
+  margin: 4px 0 18px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 8px;
+  background: #252526;
+  overflow: hidden;
+}
+
+.fmToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: #2d2d2d;
+}
+
+.fmPath {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #9aa0a6;
+  font-size: 12px;
+  direction: rtl;
+  text-align: left;
+}
+
+.fmList {
+  max-height: min(46vh, 420px);
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.fmRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 62px;
+  height: 34px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: #e8eaed;
+}
+
+.fmRow:hover:not(:disabled) {
+  background: rgba(31, 111, 235, .18);
+}
+
+.fmRow:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+.fmName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folderIcon {
+  flex: 0 0 22px;
+  width: 22px;
+  color: #4fa3f7;
+  font-size: 15px;
+  text-align: center;
+}
+
+/* 类型徽章：Word 蓝 / Excel 绿 / PPT 橙 / PDF 红 / 文本灰 */
+.fileIcon {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 26px;
+  border-radius: 3px;
+  color: #fff;
+  font: 700 10px/26px -apple-system, "Segoe UI", sans-serif;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.fileIcon.word { background: #2b579a; }
+.fileIcon.excel { background: #217346; }
+.fileIcon.ppt { background: #d24726; }
+.fileIcon.pdf { background: #d93731; font-size: 7.5px; line-height: 26px; }
+.fileIcon.text { background: #5f6368; font-size: 8px; }
+.fileIcon.other {
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, .35);
+  color: rgba(255, 255, 255, .4);
+  font-size: 14px;
+}
+
+.fmEmpty {
+  padding: 26px 10px;
+  color: #9aa0a6;
+  font-size: 13px;
+  text-align: center;
+}
+
+.fmFoot {
+  padding: 6px 10px;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  color: #9aa0a6;
+  font-size: 11px;
+  text-align: right;
+}

@@ -345,7 +345,175 @@
       emptyError.textContent = '请输入文件完整路径';
       return;
     }
-    window.location.href = officeUrl(value);
+    // 目录 → 就地浏览；文件 → 打开编辑器
+    fetch('/office/api/browse?path=' + encodeURIComponent(value))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (data && !data.error) {
+          renderBrowse(data);
+          return;
+        }
+        window.location.href = officeUrl(value);
+      })
+      .catch(function () {
+        window.location.href = officeUrl(value);
+      });
+  }
+
+  // ---------------- 文件管理器 ----------------
+
+  var fmList = document.getElementById('fmList');
+  var fmPath = document.getElementById('fmPath');
+  var fmUp = document.getElementById('fmUp');
+  var fmRefresh = document.getElementById('fmRefresh');
+  var fmFoot = document.getElementById('fmFoot');
+  var fmCurrent = null;
+  var fmParent = null;
+  var fmToken = 0;
+
+  var ICON_KINDS = {
+    word: { exts: ['doc', 'docx', 'odt', 'rtf'], cls: 'word', label: 'W' },
+    excel: { exts: ['xls', 'xlsx', 'ods', 'csv'], cls: 'excel', label: 'X' },
+    ppt: { exts: ['ppt', 'pptx', 'odp'], cls: 'ppt', label: 'P' },
+    pdf: { exts: ['pdf'], cls: 'pdf', label: 'PDF' },
+    text: { exts: ['txt'], cls: 'text', label: 'TXT' }
+  };
+
+  function iconFor(name) {
+    var ext = (name.split('.').pop() || '').toLowerCase();
+    for (var kind in ICON_KINDS) {
+      if (ICON_KINDS[kind].exts.indexOf(ext) >= 0) {
+        return ICON_KINDS[kind];
+      }
+    }
+    return null;
+  }
+
+  function fileIconNode(name, dimmed) {
+    var icon = document.createElement('span');
+    var kind = iconFor(name);
+    if (kind) {
+      icon.className = 'fileIcon ' + kind.cls;
+      icon.textContent = kind.label;
+    } else {
+      icon.className = 'fileIcon other';
+      icon.textContent = '·';
+    }
+    if (dimmed) { icon.className += ' dim'; }
+    return icon;
+  }
+
+  function fmRow(classes, iconNode, name, title, onClick) {
+    var row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'fmRow ' + classes;
+    row.title = title || name;
+    row.appendChild(iconNode);
+    var label = document.createElement('span');
+    label.className = 'fmName';
+    label.textContent = name;
+    row.appendChild(label);
+    if (onClick) {
+      row.addEventListener('click', onClick);
+    }
+    return row;
+  }
+
+  function renderBrowse(data) {
+    if (!fmList) { return; }
+    fmCurrent = data.path || '';
+    fmParent = data.parent || '';
+    fmPath.textContent = data.path || '此电脑';
+    fmPath.title = data.path || '';
+    if (fmUp) { fmUp.disabled = !data.path; }
+    fmList.textContent = '';
+
+    (data.dirs || []).forEach(function (dir) {
+      var folderIcon = document.createElement('span');
+      folderIcon.className = 'folderIcon';
+      folderIcon.textContent = '▸';
+      fmList.appendChild(fmRow('isDir', folderIcon, dir.name, dir.path, function () {
+        browse(dir.path);
+      }));
+    });
+
+    (data.documents || []).forEach(function (doc) {
+      var row = fmRow('isDoc', fileIconNode(doc.name, false), doc.name, doc.path + ' — 点击在线编辑', function () {
+        window.location.href = officeUrl(doc.path);
+      });
+      fmList.appendChild(row);
+    });
+
+    (data.others || []).forEach(function (file) {
+      var row = fmRow('isOther', fileIconNode(file.name, true), file.name,
+        file.path + ' — 该类型不支持在线编辑');
+      row.disabled = true;
+      fmList.appendChild(row);
+    });
+
+    if (!fmList.children.length) {
+      var empty = document.createElement('div');
+      empty.className = 'fmEmpty';
+      empty.textContent = '空文件夹';
+      fmList.appendChild(empty);
+    }
+
+    if (fmFoot) {
+      var parts = [];
+      var docCount = (data.documents || []).length;
+      var otherCount = (data.others || []).length;
+      if (docCount) { parts.push(docCount + ' 个可编辑文档'); }
+      if (otherCount) { parts.push(otherCount + ' 个其他文件'); }
+      if (data.truncated) { parts.push('列表过长已截断'); }
+      fmFoot.textContent = parts.join(' · ');
+      fmFoot.hidden = parts.length === 0;
+    }
+  }
+
+  function browse(path) {
+    if (!fmList) { return; }
+    var token = ++fmToken;
+    fmList.textContent = '';
+    var loading = document.createElement('div');
+    loading.className = 'fmEmpty';
+    loading.textContent = '读取中...';
+    fmList.appendChild(loading);
+    if (emptyError) { emptyError.textContent = ''; }
+    fetch('/office/api/browse?path=' + encodeURIComponent(path || ''))
+      .then(function (r) {
+        return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+      })
+      .then(function (result) {
+        if (token !== fmToken) { return; }
+        if (!result.ok || result.data.error) {
+          fmList.textContent = '';
+          var err = document.createElement('div');
+          err.className = 'fmEmpty';
+          err.textContent = result.data.error || '读取失败';
+          fmList.appendChild(err);
+          return;
+        }
+        renderBrowse(result.data);
+      })
+      .catch(function () {
+        if (token !== fmToken) { return; }
+        fmList.textContent = '';
+        var err = document.createElement('div');
+        err.className = 'fmEmpty';
+        err.textContent = '网络错误';
+        fmList.appendChild(err);
+      });
+  }
+
+  if (fmUp) {
+    fmUp.addEventListener('click', function () {
+      browse(fmParent || '');
+    });
+  }
+  if (fmRefresh) {
+    fmRefresh.addEventListener('click', function () {
+      browse(fmCurrent);
+    });
   }
 
   saveButton.addEventListener('click', saveDocument);
@@ -379,6 +547,7 @@
     emptyState.hidden = false;
     frame.hidden = true;
     renderRecent();
+    browse('');
     return;
   }
 

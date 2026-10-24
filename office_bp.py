@@ -186,6 +186,61 @@ for _prefix in ASSET_PREFIXES:
     )
 
 
+@office_bp.route(f'/{pluginID}/api/browse')
+def officeBrowse():
+    """文件管理器浏览：根返回盘符；目录返回 文件夹/可编辑文档/其他文件 三组。
+
+    文档（ALLOWED_EXTENSIONS）排在前，其余文件排后（前端置灰不可打开）。
+    """
+    raw = (request.args.get('path') or '').strip()
+    if not raw or raw == '/' or raw == '\\':
+        import string
+        drives = []
+        for letter in string.ascii_uppercase:
+            drive = letter + ':\\'
+            if os.path.exists(drive):
+                drives.append({'name': letter + ':', 'path': drive})
+        return jsonify({'path': '', 'parent': None, 'dirs': drives,
+                        'documents': [], 'others': [], 'truncated': False})
+
+    full = os.path.abspath(os.path.expanduser(raw))
+    if not os.path.isdir(full):
+        return jsonify({'error': '不是文件夹或不存在'}), 400
+
+    limit = 800
+    dirs, documents, others = [], [], []
+    truncated = False
+    try:
+        entries = sorted(os.scandir(full), key=lambda e: e.name.lower())
+        for entry in entries:
+            if len(dirs) + len(documents) + len(others) >= limit:
+                truncated = True
+                break
+            try:
+                if entry.is_dir(follow_symlinks=False):
+                    dirs.append({'name': entry.name, 'path': entry.path})
+                elif entry.is_file(follow_symlinks=False):
+                    item = {'name': entry.name, 'path': entry.path}
+                    if os.path.splitext(entry.name)[1].lower() in ALLOWED_EXTENSIONS:
+                        documents.append(item)
+                    else:
+                        others.append(item)
+            except OSError:
+                continue
+    except PermissionError:
+        return jsonify({'error': '没有权限读取该文件夹'}), 403
+    except OSError as exc:
+        return jsonify({'error': str(exc)}), 400
+
+    parent = os.path.dirname(full.rstrip('\\/')) or ''
+    # 盘根（C:\）的 dirname 是 'C:'——盘符相对路径会被 abspath 解析成
+    # 盘当前目录而非盘符列表，故盘根直接回空，"上级"回到此电脑
+    if len(parent) <= 2 and parent.endswith(':'):
+        parent = ''
+    return jsonify({'path': full, 'parent': parent, 'dirs': dirs,
+                    'documents': documents, 'others': others, 'truncated': truncated})
+
+
 @office_bp.route(f'/{pluginID}/api/open')
 def officeOpen():
     path = request.args.get('path', '').strip()
